@@ -45,11 +45,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
     
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          tooltip: 'Back to Home',
-          onPressed: () => context.go('/home'), // go_router: replace with Home
-        ),
+       
         title: const Text('Create Post'),
         actions: [
           TextButton(
@@ -701,7 +697,10 @@ Future<void> _pickImageFromSource(ImageSource source) async {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Post created successfully!')),
         );
-        context.pop();
+        // Refresh posts list after creation
+        await postsNotifier.refreshPosts();
+        // Navigate to home instead of popping to avoid navigation issues
+        context.go('/home');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Failed to create post')),

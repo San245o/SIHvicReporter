@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../models/user.dart';
 import '../models/post.dart';
 import '../core/env.dart';
+import '../core/mock_data.dart';
 
 /// Abstract API service interface
 /// 
@@ -227,6 +228,23 @@ class MockApiService implements ApiService {
       ],
     );
     
+    // Add new post to mock data
+    MockData.mockPosts.insert(0, newPost);
+    
+    // Add corresponding map marker
+    final newMarker = {
+      'id': 'marker_${newPost.id}',
+      'postId': newPost.id,
+      'latitude': newPost.latitude,
+      'longitude': newPost.longitude,
+      'title': newPost.title,
+      'category': newPost.category,
+      'severity': newPost.severity,
+      'status': newPost.status,
+      'upvotes': newPost.upvotes,
+    };
+    MockData.mockMapMarkers.insert(0, newMarker);
+    
     return newPost;
   }
   
@@ -376,22 +394,34 @@ class MockApiService implements ApiService {
   Future<List<Map<String, dynamic>>> fetchMapMarkers(PostFilters filters) async {
     await Future.delayed(const Duration(milliseconds: 400));
     
-    // Import mock markers
-    final mockMarkers = await _getMockMarkers();
+    // Get mock markers directly from MockData
+    List<Map<String, dynamic>> filteredMarkers = List.from(MockData.mockMapMarkers);
     
     // Apply filters
-    List<Map<String, dynamic>> filteredMarkers = mockMarkers;
-    
     if (filters.area != null) {
+      // For area filtering, we need to check the posts to get area info
+      final areaPosts = MockData.mockPosts.where((post) => post.area == filters.area);
+      final areaPostIds = areaPosts.map((post) => post.id).toSet();
       filteredMarkers = filteredMarkers.where((marker) {
-        // Mock area filtering
-        return true; // Simplified for mock
+        return areaPostIds.contains(marker['postId']);
       }).toList();
     }
     
     if (filters.category != null) {
       filteredMarkers = filteredMarkers.where((marker) {
         return marker['category'] == filters.category;
+      }).toList();
+    }
+    
+    if (filters.severity != null) {
+      filteredMarkers = filteredMarkers.where((marker) {
+        return marker['severity'] == filters.severity;
+      }).toList();
+    }
+    
+    if (filters.status != null) {
+      filteredMarkers = filteredMarkers.where((marker) {
+        return marker['status'] == filters.status;
       }).toList();
     }
     
@@ -580,35 +610,16 @@ class MockApiService implements ApiService {
   
   // Helper methods to get mock data
   Future<List<Post>> _getMockPosts() async {
-    // Import mock data
-    final mockData = await _importMockData();
-    return mockData['posts'] as List<Post>;
-  }
-  
-  Future<List<Map<String, dynamic>>> _getMockMarkers() async {
-    final mockData = await _importMockData();
-    return mockData['markers'] as List<Map<String, dynamic>>;
+    // Return mock posts directly from MockData class
+    return MockData.mockPosts;
   }
   
   Future<List<Map<String, dynamic>>> _getMockConversations() async {
-    final mockData = await _importMockData();
-    return mockData['conversations'] as List<Map<String, dynamic>>;
+    return MockData.mockConversations;
   }
   
   Future<List<Map<String, dynamic>>> _getMockMessages() async {
-    final mockData = await _importMockData();
-    return mockData['messages'] as List<Map<String, dynamic>>;
-  }
-  
-  Future<Map<String, dynamic>> _importMockData() async {
-    // This would normally import from mock_data.dart
-    // For now, return empty data
-    return {
-      'posts': <Post>[],
-      'markers': <Map<String, dynamic>>[],
-      'conversations': <Map<String, dynamic>>[],
-      'messages': <Map<String, dynamic>>[],
-    };
+    return MockData.mockMessages;
   }
 }
 
